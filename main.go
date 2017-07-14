@@ -22,9 +22,25 @@ type controller struct {
 	book *Book
 }
 
+const bookShelveFilename = "bookshelv.json"
+
+func storeBook(book *Book) error {
+	f, err := os.Create(bookShelveFilename)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	enc := json.NewEncoder(f)
+	err = enc.Encode(book)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func newBook() (*Book, error) {
 	var book Book
-	f, err := os.Open("bookshelf.json")
+	f, err := os.Open(bookShelveFilename)
 	if err != nil {
 		return nil, err
 	}
@@ -203,4 +219,5 @@ func main() {
 	//Block until server shutdown finished, see goroutine above.
 	<-done
 	fmt.Println("Storing books...")
+	storeBook(book)
 }
