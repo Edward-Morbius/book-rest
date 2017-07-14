@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/mux"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"strconv"
 	"sync"
-
-	"github.com/gorilla/mux"
 )
 
 type Book struct {
@@ -21,12 +22,19 @@ type controller struct {
 	book *Book
 }
 
-func newBook() *Book {
-	return &Book{Pages: []string{
-		"This is the first page.",
-		"This is the second page.",
-		"This is the third page.",
-	}}
+func newBook() (*Book, error) {
+	var book Book
+	f, err := os.Open("bookshelf.json")
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	dec := json.NewDecoder(f)
+	err = dec.Decode(&book)
+	if err != nil {
+		return nil, err
+	}
+	return &book, nil
 }
 
 func (c *controller) create(rw http.ResponseWriter, req *http.Request) {
@@ -154,8 +162,11 @@ func middleware(next http.HandlerFunc) http.HandlerFunc {
 }
 
 func main() {
-
-	c := controller{book: newBook()}
+	book, err := newBook()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	c := controller{book: book}
 
 	r := mux.NewRouter()
 	r.Path("/pages").
@@ -170,6 +181,26 @@ func main() {
 	r.Path("/pages/{id:[0-9]+}").
 		Methods("DELETE").
 		Handler(http.HandlerFunc(c.delete))
-
-	log.Fatalf("error: %v\n", http.ListenAndServe("localhost:8080", r))
+	//Ger server object.
+	server := http.Server{Addr: "localhost:8080", Handler: r}
+	//Make channel for signalling end.
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		err := server.ListenAndServe()
+		if err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Error starting server: %v\n", err)
+		}
+		log.Printf("server: %v\n", )
+		fmt.Println("Goroutine: server down")
+	}()
+	sigChan := make(chan os.Signal)
+	signal.Notify(sigChan, os.Interrupt, os.Kill)
+	//Block until we get a signal.
+	<-sigChan
+	fmt.Println("sigChan:", sigChan)
+	server.Shutdown(context.Background())
+	//Block until server shutdown finished, see goroutine above.
+	<-done
+	fmt.Println("Storing books...")
 }
