@@ -97,7 +97,7 @@ func (c *controller) create(rw http.ResponseWriter, req *http.Request) {
 }
 
 func (c *controller) read(rw http.ResponseWriter, req *http.Request) {
-
+	fmt.Printf("param1='%s', param2='%s'\n", req.FormValue("param1"), req.FormValue("param2"))
 	ctx := req.Context()
 	fmt.Printf("user: %s\n", ctx.Value("user"))
 
