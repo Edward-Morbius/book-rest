@@ -219,5 +219,8 @@ func main() {
 	//Block until server shutdown finished, see goroutine above.
 	<-done
 	fmt.Println("Storing books...")
-	storeBook(book)
+	err = storeBook(book)
+	if err != nil {
+		log.Fatalf("Can not write book shelv: %v\n", err)
+	}
 }
