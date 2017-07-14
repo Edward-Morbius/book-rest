@@ -207,7 +207,7 @@ func main() {
 		if err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Error starting server: %v\n", err)
 		}
-		log.Printf("server: %v\n", )
+		log.Printf("server: %v\n")
 		fmt.Println("Goroutine: server down")
 	}()
 	sigChan := make(chan os.Signal)
